@@ -268,7 +268,12 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
   } else {
     dates <- seq_len(T)
   }
-
+ ## enforce a common x-axis range across subplots for alignment
+xlim_common <- options_R$xlim
+if (is.null(xlim_common)) xlim_common <- options_I$xlim
+if (is.null(xlim_common)) xlim_common <- c(min(dates), max(dates) + 1)
+options_R$xlim <- xlim_common
+options_I$xlim <- xlim_common
   ########################################################################
   ### these few lines are to make CRAN checks happy with ggplot2... ###
   value <- NULL
@@ -405,9 +410,6 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
           ))
         }
 
-        if (is.null(options_R$xlim)) {
-          options_R$xlim <- c(min(dates), max(dates) + 1)
-        }
 
         df <- melt(df, id = id)
         df$group <- as.factor(rep(
@@ -460,8 +462,8 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
           options_R$xlim <- c(min(dates), max(dates) + 1)
         }
 
-        p2 <- ggplot(data.frame(
-          start = dates[t_start], end = dates[t_end], meanR = mean_posterior,
+           p2 <- ggplot(data.frame(
+          start = dates[t_start] - 0.5, end = dates[t_end] + 0.5, meanR = mean_posterior,
           lower = quantile_0.025_posterior,
           upper = quantile_0.975_posterior
         ), aes(end, meanR)) +
@@ -478,7 +480,7 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
           scale_fill_manual("", values = alpha(options_R$col, options_R$transp))
       } else {
         df_tmp <- data.frame(
-          start = dates[t_start], end = dates[t_end],
+          start = dates[t_start] - 0.5, end = dates[t_end] + 0.5,
           meanR = mean_posterior, lower = quantile_0.025_posterior,
           upper = quantile_0.975_posterior
         )
@@ -497,7 +499,7 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
           quantile_0.025_posterior2 <- x2$R[, "Quantile.0.025(R)"]
           quantile_0.975_posterior2 <- x2$R[, "Quantile.0.975(R)"]
           df_tmp2 <- data.frame(
-            start2 = dates2[t_start2], end2 = dates2[t_end],
+            start2 = dates2[t_start2]- 0.5, end2 = dates2[t_end] + 0.5,
             meanR2 = mean_posterior2, lower2 = quantile_0.025_posterior2,
             upper2 = quantile_0.975_posterior2
           )
@@ -509,10 +511,6 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
           options_R$ylim <- c(0, max(df[, grep("upper", names(df), fixed = TRUE)],
             na.rm = TRUE
           ))
-        }
-
-        if (is.null(options_R$xlim)) {
-          options_R$xlim <- c(min(dates), max(dates) + 1)
         }
 
         p2 <- ggplot(df, aes(end, meanR)) +
@@ -627,9 +625,9 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
       p2 <- p2 +
         theme_epiestim() +
         theme(
-          legend.background = element_blank(),
-          legend.margin = margin(-0.8, 0, 0, 0, unit = "cm"),
-          legend.key = element_rect(fill = NA)
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.key = element_rect(fill = NA)
         )
     }
     return(p2)
@@ -663,13 +661,13 @@ plot.estimate_R <- function(x, what = c("all", "incid", "R", "SI"), plot_theme =
       p2 <- p2 +
         theme_epiestim() +
         theme(
+          legend.position = "bottom",
           legend.background = element_blank(),
-          legend.margin = margin(-0.8, 0, 0, 0, unit = "cm"),
           legend.key = element_rect(fill = NA)
         )
     }
 
-    plot <- p1 + p2 + p3 + plot_layout(ncol = 1)
+    plot <- p1 + p2 + p3 + plot_layout(ncol = 1, guides = "collect")
 
     return(plot)
   }
